@@ -1,18 +1,18 @@
 import React from 'react';
-import { View, Text, Button, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AssessmentFeedback } from '../types';
+import { RootStackParamList } from '../navigation/types';
 
-interface Props {
-  assessment: AssessmentFeedback;
-  onRetry: () => void;
-  onReviewTranscript: () => void;
-}
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Results'>;
+type ResultsRouteProp = RouteProp<RootStackParamList, 'Results'>;
 
-const ResultsScreen: React.FC<Props> = ({
-  assessment,
-  onRetry,
-  onReviewTranscript,
-}) => {
+const ResultsScreen: React.FC = () => {
+  const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<ResultsRouteProp>();
+  const { assessment } = route.params;
+
   const renderScoreSection = (
     title: string,
     score: number,
@@ -31,7 +31,15 @@ const ResultsScreen: React.FC<Props> = ({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Speaking Assessment</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Speaking Assessment</Text>
+        <TouchableOpacity
+          style={styles.homeButton}
+          onPress={() => navigation.navigate('Landing')}
+        >
+          <Text style={styles.homeButtonText}>Home</Text>
+        </TouchableOpacity>
+      </View>
       
       <ScrollView style={styles.scrollContainer}>
         {renderScoreSection('Fluency', assessment.fluency, assessment.fluencyFeedback)}
@@ -49,8 +57,18 @@ const ResultsScreen: React.FC<Props> = ({
       </ScrollView>
 
       <View style={styles.buttonContainer}>
-        <Button title="Try Again" onPress={onRetry} />
-        <Button title="Review Transcript" onPress={onReviewTranscript} />
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate('Conversation')}
+        >
+          <Text style={styles.buttonText}>Try Again</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, styles.reviewButton]}
+          onPress={() => {/* TODO: Implement transcript review */}}
+        >
+          <Text style={styles.buttonText}>Review Transcript</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -59,23 +77,37 @@ const ResultsScreen: React.FC<Props> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
     backgroundColor: '#fff',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center',
+    color: '#1a1a1a',
+  },
+  homeButton: {
+    padding: 8,
+  },
+  homeButtonText: {
+    color: '#007AFF',
+    fontSize: 16,
   },
   scrollContainer: {
     flex: 1,
+    padding: 16,
   },
   scoreSection: {
     marginBottom: 24,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: '#f8f9fa',
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
   },
   scoreHeader: {
     flexDirection: 'row',
@@ -86,6 +118,7 @@ const styles = StyleSheet.create({
   scoreTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#1a1a1a',
   },
   scoreCircle: {
     width: 40,
@@ -108,7 +141,25 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: 16,
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+  button: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    minWidth: 120,
+    alignItems: 'center',
+  },
+  reviewButton: {
+    backgroundColor: '#34C759',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

@@ -1,15 +1,19 @@
 import React from 'react';
-import { View, Text, Button, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Constants from 'expo-constants';
 import { useConversation } from '../hooks/useConversation';
 import { ConversationTurn } from '../types';
+import { RootStackParamList } from '../navigation/types';
 
-interface Props {
-  apiKey: string;
-  onConversationEnd: () => void;
-}
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Conversation'>;
 
-const ConversationScreen: React.FC<Props> = ({ apiKey, onConversationEnd }) => {
-  const { state, startConversation, startRecording, stopRecording } = useConversation(apiKey);
+const ConversationScreen: React.FC = () => {
+  const navigation = useNavigation<NavigationProp>();
+  const { state, startConversation, startRecording, stopRecording } = useConversation(
+    Constants.expoConfig?.extra?.OPENAI_API_KEY || ''
+  );
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -25,25 +29,39 @@ const ConversationScreen: React.FC<Props> = ({ apiKey, onConversationEnd }) => {
         turn.speaker === 'user' ? styles.userMessage : styles.aiMessage,
       ]}
     >
-      <Text style={styles.messageText}>{turn.text}</Text>
+      <Text style={[
+        styles.messageText,
+        turn.speaker === 'user' ? styles.userMessageText : styles.aiMessageText
+      ]}>
+        {turn.text}
+      </Text>
     </View>
   );
 
-  if (state.assessment) {
-    onConversationEnd();
-    return null;
-  }
+  React.useEffect(() => {
+    if (state.assessment) {
+      navigation.navigate('Results', { assessment: state.assessment });
+    }
+  }, [state.assessment, navigation]);
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.timer}>{formatTime(state.timeLeft)}</Text>
         {!state.isActive && (
-          <Button title="Start Conversation" onPress={startConversation} />
+          <TouchableOpacity
+            style={styles.startButton}
+            onPress={startConversation}
+          >
+            <Text style={styles.startButtonText}>Start Conversation</Text>
+          </TouchableOpacity>
         )}
       </View>
 
-      <ScrollView style={styles.conversationContainer}>
+      <ScrollView 
+        style={styles.conversationContainer}
+        contentContainerStyle={styles.conversationContent}
+      >
         {state.turns.map(renderTurn)}
         {state.isProcessing && (
           <Text style={styles.processingText}>Processing...</Text>
@@ -68,26 +86,41 @@ const ConversationScreen: React.FC<Props> = ({ apiKey, onConversationEnd }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
     backgroundColor: '#fff',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
   timer: {
     fontSize: 24,
     fontWeight: 'bold',
+    color: '#1a1a1a',
+  },
+  startButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  startButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   conversationContainer: {
     flex: 1,
-    marginBottom: 16,
+  },
+  conversationContent: {
+    padding: 16,
   },
   messageContainer: {
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 12,
     marginVertical: 4,
     maxWidth: '80%',
   },
@@ -96,22 +129,29 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
   },
   aiMessage: {
-    backgroundColor: '#E9E9EB',
+    backgroundColor: '#f0f0f0',
     alignSelf: 'flex-start',
   },
   messageText: {
     fontSize: 16,
+  },
+  userMessageText: {
     color: '#fff',
+  },
+  aiMessageText: {
+    color: '#1a1a1a',
   },
   processingText: {
     fontStyle: 'italic',
     textAlign: 'center',
     marginVertical: 8,
+    color: '#666',
   },
   recordButton: {
     backgroundColor: '#007AFF',
     padding: 16,
-    borderRadius: 8,
+    margin: 16,
+    borderRadius: 12,
     alignItems: 'center',
   },
   recordingButton: {
